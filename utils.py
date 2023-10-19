@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from dataclasses import dataclass
 
+
 @dataclass
 class ExtractedAbf:
     area: float
@@ -71,6 +72,36 @@ def gen_customticks(rng, bel, abv):
 START_RANGE = [0.06, 0.2]
 
 
+def setup_graph(ys, grph, custom_scale):
+    grph.set_xlabel("Time (s)")
+    grph.set_ylabel("Voltage (mV)")
+    grph.set_xlim(0, 2)
+    grph.legend(loc='upper right')
+    grph.grid(which='major')
+    grph.axhline(linewidth=1, color='gray')  # thickened y=0 line
+    grph.grid(which='minor', color='gray', linestyle='-', linewidth=0.1)
+
+    rng = (int(np.min(ys)), int(np.max(ys)))
+
+    if custom_scale:
+        scaling_above = 20
+        # these functions scale values above 0 by scaling_above (kinda gross)
+        grph.set_yscale("function", functions=[lambda x: np.where(x > 0, x / scaling_above, x),
+                                               lambda x: np.where(x > 0, x * scaling_above, x)])
+
+        maj_yticks = gen_customticks(rng, 5,
+                                     5 * scaling_above)  # ticks every 5 beneath 0, every 5*scaling above above 0
+        min_yticks = gen_customticks(rng, 1, scaling_above)
+        min_xticks = gen_customticks((0, 2), 1, 0.125)  # can't rely on the autogenerator because of the weird scaling
+
+        grph.set_yticks(maj_yticks, major=True)
+        grph.set_yticks(min_yticks, minor=True)
+        grph.set_xticks(min_xticks, minor=True)
+    else:
+        grph.minorticks_on()
+        grph.set_ylim(min(((rng[0]) // 5) * 5, -5), 10)
+
+
 def process(abf: pyabf.ABF, grph, from_root=False, integration_start=0.5, conv_wid=100, custom_scale=False) -> ExtractedAbf:
     x = abf.sweepX
     ys = plot_abf(abf, grph, x)
@@ -114,39 +145,8 @@ def process_multiple(abf_names, grph, from_root=False, integration_start=0.5, co
     return extract_and_plot(x, ys, grph, conv_wid, sample_rate, integration_start, from_root, custom_scale)
 
 
-def plot_average(ys, grph, custom_scale):
-    grph.set_xlabel("Time (s)")
-    grph.set_ylabel("Voltage (mV)")
-    grph.set_xlim(0, 2)
-    grph.legend(loc='upper right')
-    grph.grid(which='major')
-    grph.axhline(linewidth=1, color='gray')  # thickened y=0 line
-    grph.grid(which='minor', color='gray', linestyle='-', linewidth=0.1)
-
-    rng = (int(np.min(ys)), int(np.max(ys)))
-
-    if custom_scale:
-        scaling_above = 20
-        # these functions scale values above 0 by scaling_above (kinda gross)
-        grph.set_yscale("function", functions=[lambda x: np.where(x > 0, x / scaling_above, x),
-                                               lambda x: np.where(x > 0, x * scaling_above, x)])
-
-        maj_yticks = gen_customticks(rng, 5,
-                                     5 * scaling_above)  # ticks every 5 beneath 0, every 5*scaling above above 0
-        min_yticks = gen_customticks(rng, 1, scaling_above)
-        min_xticks = gen_customticks((0, 2), 1, 0.125)  # can't rely on the autogenerator because of the weird scaling
-
-        grph.set_yticks(maj_yticks, major=True)
-        grph.set_yticks(min_yticks, minor=True)
-        grph.set_xticks(min_xticks, minor=True)
-    else:
-        grph.minorticks_on()
-        grph.set_ylim(min(((rng[0]) // 5) * 5, -5), 10)
-
-
 def extract_and_plot(x, ys, grph, conv_wid, sample_rate, integration_start, from_root, custom_scale):
     y_avg, line = generate_mean(x, ys, conv_wid, plot=True, axis=grph)
-    plot_average(ys, grph, custom_scale)
 
     if from_root:
         roots = find_roots(x, y_avg)
@@ -156,9 +156,9 @@ def extract_and_plot(x, ys, grph, conv_wid, sample_rate, integration_start, from
             integration_start = found_root
         else:
             # area = 0
+            setup_graph(ys, grph, custom_scale)
             return ExtractedAbf(0, x, y_avg)
 
     area = fit_integrate(x, y_avg, intg_start=integration_start, rate=sample_rate, plot=True, axis=grph)
+    setup_graph(ys, grph, custom_scale)
     return ExtractedAbf(area, x, y_avg)
-
-
