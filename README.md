@@ -6,3 +6,6 @@ through a patch-clamping rig at the University of Otago. This code:
 3. Numerically integrates the area between the averaged, convolved sweep and the x-axis from both
 the first crossing of 0V (relative to the baseline) to the 2000ms mark, and from 500ms to 2000ms. This value is given in mVs for each cell.
 4. These calculations are repeated for the averaged data across the cells in each group, providing a group average.
+
+### Example output:
+![Graph of action potential and recovery](/images/20o01007_crossing.png)
