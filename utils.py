@@ -75,7 +75,7 @@ def process(abf: pyabf.ABF, grph, from_root=False, integration_start=0.5, conv_w
     x = abf.sweepX
     ys = plot_abf(abf, grph, x)
 
-    return extract(x, ys, grph, conv_wid, abf.sampleRate, integration_start, from_root, custom_scale)
+    return extract_and_plot(x, ys, grph, conv_wid, abf.sampleRate, integration_start, from_root, custom_scale)
 
 
 def plot_abf(abf: pyabf.ABF, grph, x: np.ndarray[float], baseline_bounds=[0.01, 0.03]):
@@ -111,7 +111,7 @@ def process_multiple(abf_names, grph, from_root=False, integration_start=0.5, co
 
         ys += plot_abf(abf, grph, x)
 
-    return extract(x, ys, grph, conv_wid, sample_rate, integration_start, from_root, custom_scale)
+    return extract_and_plot(x, ys, grph, conv_wid, sample_rate, integration_start, from_root, custom_scale)
 
 
 def plot_average(ys, grph, custom_scale):
@@ -144,16 +144,18 @@ def plot_average(ys, grph, custom_scale):
         grph.set_ylim(min(((rng[0]) // 5) * 5, -5), 10)
 
 
-def extract(x, ys, grph, conv_wid, sample_rate, integration_start, from_root, custom_scale):
+def extract_and_plot(x, ys, grph, conv_wid, sample_rate, integration_start, from_root, custom_scale):
     y_avg, line = generate_mean(x, ys, conv_wid, plot=True, axis=grph)
     plot_average(ys, grph, custom_scale)
 
     if from_root:
         roots = find_roots(x, y_avg)
         found_root = next((root for root in roots if (START_RANGE[0] < root < START_RANGE[1])), None)
+
         if found_root is not None:
             integration_start = found_root
         else:
+            # area = 0
             return ExtractedAbf(0, x, y_avg)
 
     area = fit_integrate(x, y_avg, intg_start=integration_start, rate=sample_rate, plot=True, axis=grph)

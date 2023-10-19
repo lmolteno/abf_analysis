@@ -33,11 +33,11 @@ if __name__ == "__main__":
         abf = pyabf.ABF(file)
         res_500 = process(abf, graph)
         plt.savefig(file.parent / (file.stem.split('.')[0] + '_500ms.png'))
-        plt.clf()
+        plt.cla()
 
         res_root = process(abf, graph, from_root=True)
         plt.savefig(file.parent / (file.stem.split('.')[0] + '_crossing.png'))
-        plt.clf()
+        plt.cla()
 
         save_csv(res_root, file.parent / (file.stem.split('.')[0] + '_data.csv'))
         file_dicts.append({"area_root": res_root.area, "area_500ms": res_500.area, **extract_ages(file)})
@@ -52,14 +52,13 @@ if __name__ == "__main__":
     for group in tqdm(groups):
         group_files = [file for file in files if str(group) in str(file)]
 
-        plt.clf()
         res_500 = process_multiple(group_files, graph)
         plt.savefig(group / 'age_avg_500ms.png')
-        plt.clf()
+        plt.cla()
 
         res_root = process_multiple(group_files, graph, from_root=True)
         plt.savefig(group / 'age_avg_crossing.png')
-        plt.clf()
+        plt.cla()
 
         save_csv(res_root, group / 'age_avg.csv')
         group_dicts.append({"area_root": res_root.area, "area_500ms": res_500.area, **extract_ages(group / '123.abf')})
